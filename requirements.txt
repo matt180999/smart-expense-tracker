@@ -1,0 +1,11 @@
+streamlit
+pandas
+numpy
+plotly
+scikit-learn
+prophet        # optional; heavy — fine if you want Prophet forecasting
+statsmodels
+xgboost        # optional - for later advanced model
+gspread        # optional - google sheets integration
+oauth2client   # optional - google auth
+openpyxl
