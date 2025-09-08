@@ -689,24 +689,28 @@ from datetime import date as _date  # local alias to avoid shadowing if needed
 
 # --- The Damage Report 😅 ---
 
-from datetime import date as _date  # alias to avoid shadowing
+# --- The Damage Report 😅 ---
 
-# Make sure the Date column is in datetime.date format
+from datetime import date as _date  # alias
+
+if expenses is None:
+    expenses = pd.DataFrame()
+
+# Ensure Date is a date object
 if not expenses.empty and "Date" in expenses.columns:
     try:
         expenses["Date"] = pd.to_datetime(expenses["Date"]).dt.date
     except Exception:
         pass
 
-# Make sure Amount is numeric
+# Ensure Amount is numeric
 if not expenses.empty and "Amount" in expenses.columns:
     expenses["Amount"] = pd.to_numeric(expenses["Amount"], errors="coerce").fillna(0.0)
 
-# Get today's date
 today_date = _date.today()
 year, month = today_date.year, today_date.month
 
-# Filter this month's expenses
+# Filter for this month
 if not expenses.empty and "Date" in expenses.columns:
     this_month_expenses = expenses[
         expenses["Date"].apply(
@@ -716,17 +720,17 @@ if not expenses.empty and "Date" in expenses.columns:
 else:
     this_month_expenses = pd.DataFrame()
 
-# Totals as floats
+# Compute totals safely as floats
 total_month = float(this_month_expenses["Amount"].sum()) if not this_month_expenses.empty else 0.0
 today_total = float(
     this_month_expenses[this_month_expenses["Date"] == today_date]["Amount"].sum()
 ) if not this_month_expenses.empty else 0.0
+budget_val = float(settings.get("monthly_budget") or 0.0)
 
-# Metrics
+# Metrics (now guaranteed floats)
 c1, c2, c3 = st.columns(3)
 c1.metric("Today spent (₹)", f"{today_total:.2f}")
 c2.metric("This month so far (₹)", f"{total_month:.2f}")
-budget_val = float(settings.get("monthly_budget") or 0.0)
 c3.metric("Budget (₹)", f"{budget_val:.2f}")
 
 
