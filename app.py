@@ -876,9 +876,14 @@ if uploaded is not None:
         st.error("Upload failed: " + str(e))
 
 # Anniversary Easter egg
+from datetime import date  # make sure this import is at the top of app.py
+
+# Anniversary Easter egg
+today = date.today()  # define 'today' safely
 if today.day == 17:
     st.balloons()
-    st.success("🎉 HAPPY ANNIVERSARY MY LOVE! 💕 This app was crafted with extra love just for you! ✨💖✨")
+    st.success("🎉 HAPPY ANNIVERSARY MY LOVE! ❣️")
+
 
 # End of app with personal footer
 st.markdown("---")
