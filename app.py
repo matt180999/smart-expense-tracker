@@ -684,17 +684,64 @@ expenses = load_expenses()
 recurring = load_recurring()
 
 # show month summary
-today = date.today()
-year, month = today.year, today.month
-this_month_expenses = expenses[expenses["Date"].apply(lambda d: d.year==year and d.month==month)] if not expenses.empty else pd.DataFrame()
-total_month = this_month_expenses["Amount"].sum() if not this_month_expenses.empty else 0.0
-today_total = this_month_expenses[this_month_expenses["Date"]==today]["Amount"].sum() if not this_month_expenses.empty else 0.0
+# ---------- Safe metrics block (replace the old block with this) ----------
+from datetime import date as _date  # local alias to avoid shadowing if needed
 
+# Ensure expenses DataFrame exists
+if expenses is None:
+    expenses = pd.DataFrame()
+
+# Coerce Date column to python date objects (safe even if already date)
+if not expenses.empty and "Date" in expenses.columns:
+    try:
+        expenses["Date"] = pd.to_datetime(expenses["Date"]).dt.date
+    except Exception:
+        # if conversion fails, leave as-is (we'll guard later)
+        pass
+
+# Coerce Amount to numeric to avoid string issues
+if not expenses.empty and "Amount" in expenses.columns:
+    expenses["Amount"] = pd.to_numeric(expenses["Amount"], errors="coerce").fillna(0.0)
+
+# Today's date as a python date object
+today_date = _date.today()
+year, month = today_date.year, today_date.month
+
+# Filter expenses for this month (safe even if some Date values are NaN)
+if not expenses.empty and "Date" in expenses.columns:
+    this_month_expenses = expenses[
+        expenses["Date"].apply(lambda d: (hasattr(d, "year") and d.year == year and d.month == month) if pd.notna(d) else False)
+    ]
+else:
+    this_month_expenses = pd.DataFrame()
+
+# Totals as float (safe for formatting)
+total_month = float(this_month_expenses["Amount"].sum()) if not this_month_expenses.empty else 0.0
+
+# Today's total (compare date objects)
+if not this_month_expenses.empty and "Date" in this_month_expenses.columns:
+    try:
+        today_total = float(this_month_expenses[this_month_expenses["Date"] == today_date]["Amount"].sum())
+    except Exception:
+        # Fallback: try comparing by ISO string if types mismatch
+        try:
+            today_str = today_date.isoformat()
+            today_total = float(
+                this_month_expenses[pd.to_datetime(this_month_expenses["Date"]).dt.strftime("%Y-%m-%d") == today_str]["Amount"].sum()
+            )
+        except Exception:
+            today_total = 0.0
+else:
+    today_total = 0.0
+
+# Display metrics (guaranteed numeric strings)
 c1, c2, c3 = st.columns(3)
 c1.metric("Today spent (₹)", f"{today_total:.2f}")
 c2.metric("This month so far (₹)", f"{total_month:.2f}")
-budget_val = settings.get("monthly_budget") or 0.0
+
+budget_val = float(settings.get("monthly_budget") or 0.0)
 c3.metric("Budget (₹)", f"{budget_val:.2f}")
+# ------------------------------------------------------------------------
 
 # Category pie
 if not this_month_expenses.empty:
