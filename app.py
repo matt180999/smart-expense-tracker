@@ -804,13 +804,22 @@ with tab1:
     st.markdown("#### Recent Expenses")
     current_expenses = load_expenses()
     if not current_expenses.empty:
-        # Show last 15 expenses
-        recent_expenses = current_expenses.tail(15).iloc[::-1]  # Reverse to show newest first
-        
+        # Ensure Amount and Date are safe types
+        if "Amount" in current_expenses.columns:
+            current_expenses["Amount"] = pd.to_numeric(current_expenses["Amount"], errors="coerce").fillna(0.0)
+        if "Date" in current_expenses.columns:
+            current_expenses["Date"] = pd.to_datetime(current_expenses["Date"], errors="coerce").dt.date
+
+        # Show last 15 expenses (newest first)
+        recent_expenses = current_expenses.tail(15).iloc[::-1]
+
         for idx, row in recent_expenses.iterrows():
             col1, col2 = st.columns([5, 1])
             with col1:
-                st.write(f"**{row['Date']}** | {row['Category']} | ₹{row['Amount']:.2f} | {row['PaymentType']} | {row['Notes']}")
+                st.write(
+                    f"**{row['Date']}** | {row['Category']} | ₹{float(row['Amount']):.2f} | "
+                    f"{row['PaymentType']} | {row['Notes']}"
+                )
             with col2:
                 if st.button("🗑️", key=f"del_exp_{idx}", help="Delete this expense"):
                     delete_expense_by_index(current_expenses, idx)
@@ -823,10 +832,16 @@ with tab2:
     st.markdown("#### Recurring Payments")
     current_recurring = load_recurring()
     if not current_recurring.empty:
+        if "Amount" in current_recurring.columns:
+            current_recurring["Amount"] = pd.to_numeric(current_recurring["Amount"], errors="coerce").fillna(0.0)
+
         for idx, row in current_recurring.iterrows():
             col1, col2 = st.columns([5, 1])
             with col1:
-                st.write(f"**{row['Name']}** | {row['Category']} | ₹{row['Amount']:.2f} | {row['Frequency']} | Day {row['DayOfMonth']}")
+                st.write(
+                    f"**{row['Name']}** | {row['Category']} | ₹{float(row['Amount']):.2f} | "
+                    f"{row['Frequency']} | Day {row['DayOfMonth']}"
+                )
             with col2:
                 if st.button("🗑️", key=f"del_rec_{idx}", help="Delete this recurring payment"):
                     delete_recurring_by_index(current_recurring, idx)
@@ -834,6 +849,7 @@ with tab2:
                     st.rerun()
     else:
         st.info("No recurring payments to delete")
+
 
 # Recurring list
 st.markdown("### 🔄 Your Money Subscriptions 📋")
