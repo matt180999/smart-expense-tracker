@@ -804,21 +804,22 @@ with tab1:
     st.markdown("#### Recent Expenses")
     current_expenses = load_expenses()
     if not current_expenses.empty:
-        # Ensure Amount and Date are safe types
-        if "Amount" in current_expenses.columns:
-            current_expenses["Amount"] = pd.to_numeric(current_expenses["Amount"], errors="coerce").fillna(0.0)
-        if "Date" in current_expenses.columns:
-            current_expenses["Date"] = pd.to_datetime(current_expenses["Date"], errors="coerce").dt.date
+        # 🔥 Add Delete All button at the top
+        if st.button("🚨 Delete ALL Expenses", type="primary"):
+            current_expenses = pd.DataFrame(columns=current_expenses.columns)  # clear dataframe
+            save_expenses(current_expenses)  # overwrite with empty
+            st.success("All expenses deleted!")
+            st.rerun()
 
-        # Show last 15 expenses (newest first)
-        recent_expenses = current_expenses.tail(15).iloc[::-1]
-
+        # Show last 15 expenses
+        recent_expenses = current_expenses.tail(15).iloc[::-1]  # Reverse to show newest first
+        
         for idx, row in recent_expenses.iterrows():
             col1, col2 = st.columns([5, 1])
             with col1:
                 st.write(
-                    f"**{row['Date']}** | {row['Category']} | ₹{float(row['Amount']):.2f} | "
-                    f"{row['PaymentType']} | {row['Notes']}"
+                    f"**{row['Date']}** | {row['Category']} | ₹{float(row['Amount']):.2f} "
+                    f"| {row['PaymentType']} | {row['Notes']}"
                 )
             with col2:
                 if st.button("🗑️", key=f"del_exp_{idx}", help="Delete this expense"):
@@ -828,19 +829,24 @@ with tab1:
     else:
         st.info("No expenses to delete")
 
+
 with tab2:
     st.markdown("#### Recurring Payments")
     current_recurring = load_recurring()
     if not current_recurring.empty:
-        if "Amount" in current_recurring.columns:
-            current_recurring["Amount"] = pd.to_numeric(current_recurring["Amount"], errors="coerce").fillna(0.0)
+        # 🔥 Add Delete All Recurring button
+        if st.button("🚨 Delete ALL Recurring Payments", type="primary"):
+            current_recurring = pd.DataFrame(columns=current_recurring.columns)
+            save_recurring(current_recurring)
+            st.success("All recurring payments deleted!")
+            st.rerun()
 
         for idx, row in current_recurring.iterrows():
             col1, col2 = st.columns([5, 1])
             with col1:
                 st.write(
-                    f"**{row['Name']}** | {row['Category']} | ₹{float(row['Amount']):.2f} | "
-                    f"{row['Frequency']} | Day {row['DayOfMonth']}"
+                    f"**{row['Name']}** | {row['Category']} | ₹{float(row['Amount']):.2f} "
+                    f"| {row['Frequency']} | Day {row['DayOfMonth']}"
                 )
             with col2:
                 if st.button("🗑️", key=f"del_rec_{idx}", help="Delete this recurring payment"):
@@ -849,6 +855,7 @@ with tab2:
                     st.rerun()
     else:
         st.info("No recurring payments to delete")
+
 
 
 # Recurring list
