@@ -308,6 +308,11 @@ def load_expenses():
     df["Date"] = pd.to_datetime(df["Date"]).dt.date
     return df
 
+def save_expenses(df):
+    """Overwrite the expenses CSV with the given DataFrame."""
+    df.to_csv(EXPENSES_FILE, index=False)
+
+
 def append_expense(row: dict):
     df = load_expenses()
     ndf = pd.DataFrame([row])
